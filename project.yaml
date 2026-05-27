@@ -1,0 +1,64 @@
+# Project config for the CAPZ Prow dashboard.
+#
+# Consumed by the prow-ai-dashboard fetcher at
+#   github.com/willie-yao/prow-ai-dashboard
+# via the reusable workflow in .github/workflows/deploy.yml. Together with
+# prompts/system.md this is the full project ownership surface; the engine
+# repo holds no CAPZ-specific configuration.
+
+id: capz
+name: "Cluster API Provider Azure"
+short_name: "CAPZ"
+
+# Where in kubernetes/test-infra to find the prow job YAMLs.
+source:
+  test_infra_path: "config/jobs/kubernetes-sigs/cluster-api-provider-azure"
+  # Only files whose name starts with this prefix are treated as job
+  # configs. See backend/internal/prow/jobconfig/fetch.go in the engine
+  # repo for the exact filter rule.
+  file_prefix: "cluster-api-provider-azure-"
+
+# Filter jobs by their testgrid-dashboards annotation. Only jobs that
+# advertise this dashboard show up.
+testgrid:
+  dashboard: "sig-cluster-lifecycle-cluster-api-provider-azure"
+
+# GCS bucket holding build artifacts (started.json, finished.json,
+# junit.e2e_suite.1.xml, build-log.txt, machine logs, etc.).
+gcs:
+  bucket: "kubernetes-ci-logs"
+
+# UI-facing branding. Frontend reads these from data/manifest.json at
+# runtime; backend uses site_url for notification deep links.
+branding:
+  title: "CAPZ Prow Dashboard"
+  base_path: "/capz-prow-ai-dashboard"
+  site_url: "https://willie-yao.github.io/capz-prow-ai-dashboard"
+  source_repo:
+    owner: "kubernetes-sigs"
+    name: "cluster-api-provider-azure"
+
+# CAPI-specific knobs. Used when artifacts.collector is "capi" — the
+# collector groups GCS debug artifacts by cluster names matching this
+# prefix.
+capi:
+  cluster_name_prefix: "capz-e2e"
+
+# Per-build artifact collector. "capi" knows the artifacts/clusters/{name}/
+# machines/{vm}/... layout used by Cluster API providers.
+artifacts:
+  collector: "capi"
+
+# AI module + endpoint. The system prompt is composed at fetcher startup
+# from the engine's universal Prow base + this repo's prompts/system.md +
+# the engine's JSON response schema, so changing the model behavior is
+# usually done by editing prompts/system.md, not this file.
+#
+# Endpoint, model, and headers can target any OpenAI-compatible chat
+# completions API. The defaults here point at GitHub Copilot; see
+# docs/ai-providers.md in the engine repo for Nvidia Dynamo / Azure
+# OpenAI / OpenAI / Ollama snippets.
+ai:
+  module: "capi"
+  endpoint: "https://api.githubcopilot.com/chat/completions"
+  model: "claude-opus-4.6"

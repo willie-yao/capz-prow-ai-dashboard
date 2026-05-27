@@ -13,4 +13,4 @@ jobs:
   clear:
     uses: willie-yao/prow-ai-dashboard/.github/workflows/reusable-clear-cache.yml@main
     with:
-      config: capz
+      project_dir: "."
