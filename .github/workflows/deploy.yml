@@ -1,0 +1,30 @@
+name: Deploy Dashboard
+
+# Builds and deploys the CAPZ Prow AI Dashboard to this repo's GitHub Pages.
+# All logic lives in the engine repo (willie-yao/prow-ai-dashboard); this
+# workflow just selects the CAPZ config and forwards secrets.
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    uses: willie-yao/prow-ai-dashboard/.github/workflows/reusable-deploy.yml@main
+    with:
+      config: capz
+    secrets:
+      AI_TOKEN: ${{ secrets.AI_TOKEN }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
