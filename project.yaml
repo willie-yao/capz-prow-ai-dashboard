@@ -23,6 +23,52 @@ source:
 testgrid:
   dashboard: "sig-cluster-lifecycle-cluster-api-provider-azure"
 
+# Categories used to group jobs on the landing page. Rules are evaluated in
+# order; first lowercase substring match wins. Jobs with no match are
+# bucketed under "other". The frontend renders sections in this same order.
+#
+# CAPZ keeps the AKS-specific buckets ahead of the generic e2e bucket so
+# AKS jobs don't collapse into capz-e2e. Without this list the engine
+# falls back to project.DefaultCategories (conformance, capi-e2e, upgrade,
+# coverage, scalability, e2e).
+categories:
+  - match: "conformance"
+    id: "conformance"
+    label: "Conformance"
+  - match: "[managed kubernetes]"
+    id: "aks-e2e"
+    label: "AKS E2E"
+  - match: "e2e-aks"
+    id: "aks-e2e"
+    label: "AKS E2E"
+  - match: "capi-e2e"
+    id: "capi-e2e"
+    label: "CAPI E2E"
+  - match: "upgrade"
+    id: "upgrade"
+    label: "Upgrade"
+  - match: "coverage"
+    id: "coverage"
+    label: "Coverage"
+  - match: "scalability"
+    id: "scalability"
+    label: "Scalability"
+  - match: "e2e"
+    id: "capz-e2e"
+    label: "CAPZ E2E"
+
+# Display order for category sections on the landing page. This decouples
+# match precedence (above, where specific rules MUST come before broader
+# ones) from section ordering in the UI.
+category_display_order:
+  - capz-e2e
+  - aks-e2e
+  - upgrade
+  - capi-e2e
+  - conformance
+  - coverage
+  - scalability
+
 # GCS bucket holding build artifacts (started.json, finished.json,
 # junit.e2e_suite.1.xml, build-log.txt, machine logs, etc.).
 gcs:

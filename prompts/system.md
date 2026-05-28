@@ -36,7 +36,7 @@ If any link breaks, downstream components fail.
 Per-build artifacts under `artifacts/clusters/{cluster-name}/`:
 - `machines/{vm}/cloud-init-output.log`, `boot.log`, `kubelet.log`, `containerd.log`, `journal.log`
 - `Machine/`, `AzureMachine/`, `MachinePool/`, `AzureMachinePool/` (resource YAML dumps)
-- `azure-activity.log` (Azure ARM activity log excerpt)
+- `azure-activity-logs/{cluster-name}.log` (Azure ARM activity log excerpt)
 
 ## Common Failure Patterns
 
@@ -93,7 +93,7 @@ Per-build artifacts under `artifacts/clusters/{cluster-name}/`:
 1. build-log.txt — first fatal error or timeout.
 2. kubelet.log — startup crashes, flag errors, certs, API connection.
 3. cloud-init-output.log / boot.log — did bootstrap scripts succeed?
-4. azure-activity.log — VM provisioning errors, API failures.
+4. azure-activity-logs/{cluster-name}.log — VM provisioning errors, API failures.
 5. Resource YAMLs (Machine/, AzureMachine/, ...) — verify template expansion and conditions.
 
 ## Repos to Reference in `relevant_files`
