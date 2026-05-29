@@ -1,10 +1,5 @@
 # Project config for the CAPZ Prow dashboard.
-#
-# Consumed by the prow-ai-dashboard fetcher at
-#   github.com/willie-yao/prow-ai-dashboard
-# via the reusable workflow in .github/workflows/deploy.yml. Together with
-# prompts/system.md this is the full project ownership surface; the engine
-# repo holds no CAPZ-specific configuration.
+# Consumed by the prow-ai-dashboard engine via .github/workflows/deploy.yml.
 
 id: capz
 name: "Cluster API Provider Azure"
@@ -13,24 +8,14 @@ short_name: "CAPZ"
 # Where in kubernetes/test-infra to find the prow job YAMLs.
 source:
   test_infra_path: "config/jobs/kubernetes-sigs/cluster-api-provider-azure"
-  # Only files whose name starts with this prefix are treated as job
-  # configs. See backend/internal/prow/jobconfig/fetch.go in the engine
-  # repo for the exact filter rule.
   file_prefix: "cluster-api-provider-azure-"
 
-# Filter jobs by their testgrid-dashboards annotation. Only jobs that
-# advertise this dashboard show up.
+# Only jobs that advertise this testgrid dashboard are included.
 testgrid:
   dashboard: "sig-cluster-lifecycle-cluster-api-provider-azure"
 
-# Categories used to group jobs on the landing page. Rules are evaluated in
-# order; first lowercase substring match wins. Jobs with no match are
-# bucketed under "other". The frontend renders sections in this same order.
-#
-# CAPZ keeps the AKS-specific buckets ahead of the generic e2e bucket so
-# AKS jobs don't collapse into capz-e2e. Without this list the engine
-# falls back to project.DefaultCategories (conformance, capi-e2e, upgrade,
-# coverage, scalability, e2e).
+# Job grouping. Rules are evaluated in order; first lowercase substring match
+# wins. Jobs with no match go in "other".
 categories:
   - match: "conformance"
     id: "conformance"
@@ -57,9 +42,7 @@ categories:
     id: "capz-e2e"
     label: "CAPZ E2E"
 
-# Display order for category sections on the landing page. This decouples
-# match precedence (above, where specific rules MUST come before broader
-# ones) from section ordering in the UI.
+# Display order for category sections on the landing page.
 category_display_order:
   - capz-e2e
   - aks-e2e
@@ -69,13 +52,11 @@ category_display_order:
   - coverage
   - scalability
 
-# GCS bucket holding build artifacts (started.json, finished.json,
-# junit.e2e_suite.1.xml, build-log.txt, machine logs, etc.).
+# GCS bucket holding build artifacts.
 gcs:
   bucket: "kubernetes-ci-logs"
 
-# UI-facing branding. Frontend reads these from data/manifest.json at
-# runtime; backend uses site_url for notification deep links.
+# UI branding. Frontend reads these from data/manifest.json at runtime.
 branding:
   title: "CAPZ Prow Dashboard"
   base_path: "/capz-prow-ai-dashboard"
@@ -84,44 +65,22 @@ branding:
     owner: "kubernetes-sigs"
     name: "cluster-api-provider-azure"
 
-# CAPI-specific knobs. Used when artifacts.collector is "capi" — the
-# collector groups GCS debug artifacts by cluster names matching this
-# prefix.
+# Cluster name prefix the capi collector uses to group machine artifacts.
 capi:
   cluster_name_prefix: "capz-e2e"
 
-# Per-build artifact collector. "capi" knows the artifacts/clusters/{name}/
-# machines/{vm}/... layout used by Cluster API providers.
+# Per-build artifact collector.
 artifacts:
   collector: "capi"
 
-# AI module + endpoint. The system prompt is composed at fetcher startup
-# from the engine's universal Prow base + this repo's prompts/system.md +
-# the engine's JSON response schema, so changing the model behavior is
-# usually done by editing prompts/system.md, not this file.
-#
-# Endpoint, model, and headers can target any OpenAI-compatible chat
-# completions API. The defaults here point at GitHub Copilot; see
-# docs/ai-providers.md in the engine repo for Nvidia Dynamo / Azure
-# OpenAI / OpenAI / Ollama snippets.
-# Endpoint and model are intentionally NOT set here. They are supplied
-# via repo variables (`vars.AI_MODEL` / `vars.AI_ENDPOINT`) on this
-# consumer (see .github/workflows/deploy.yml). Keeping them out of this
-# public file prevents internal-only model identifiers and private
-# endpoint URLs from being exposed in the repo or in deployed JSON. See
-# docs/ai-providers.md > "Hiding the model identifier" in the engine
-# repo for details.
+# AI analysis settings. Endpoint and model come from repo variables
+# (vars.AI_MODEL / vars.AI_ENDPOINT) wired in .github/workflows/deploy.yml.
 ai:
   module: "capi"
 
   # Per-failure evidence collected by the capi module before each AI call.
-  # Every field below is optional; omitting a field falls back to the engine
-  # default. To explicitly disable a default, set the field to an empty
-  # list ([]).
+  # Omit a field to use the engine default; set to [] to disable a default.
   evidence:
-    # Filenames under artifacts/clusters/<name>/machines/<vm>/ to fetch the
-    # tail of and include as "=== Machine log: <name> ===" sections.
-    # Default: kubelet.log, containerd.log, journal.log.
     machine_logs:
       - kubelet.log
       - containerd.log
@@ -129,25 +88,12 @@ ai:
       - boot.log
       - cloud-init-output.log
 
-    # Namespaces under artifacts/clusters/bootstrap/logs/ to walk for
-    # controller manager.log files. Each entry can be a bare namespace
-    # string or a {namespace, pod_name_regex, container_log} object.
-    # The collector picks one log per deployment (a single namespace can
-    # host multiple controllers).
-    # Default: capi-system, capi-kubeadm-bootstrap-system,
-    # capi-kubeadm-control-plane-system.
     controller_logs:
       - capi-system
       - capi-kubeadm-bootstrap-system
       - capi-kubeadm-control-plane-system
       - capz-system
 
-    # Regex patterns matched against each line of build-log.txt during
-    # evidence collection. Matches plus 2 lines of surrounding context
-    # are inserted as "=== Build Log Errors ===". The raw tail of the
-    # build log is included separately, so generic "error" patterns are
-    # redundant; this list is for high-signal CAPZ/Azure failures.
-    # Default engine patterns cover FAIL/timeout/CrashLoopBackOff/NotFound.
     build_log_patterns:
       - "FAIL|\\[FAIL\\]"
       - "timed?\\s*out|timeout"
@@ -160,18 +106,9 @@ ai:
       - "provisioningState.*Failed"
       - "version.*not.*available|not.*replicated"
 
-  # Agentic mode: when the curator pipeline (the `evidence:` block above)
-  # has little to work with, the engine's capi module routes the failure
-  # through a tool-calling loop that browses GCS itself via four function-
-  # calling tools (list/read/tail/grep). Requires an endpoint that supports
-  # OpenAI-style function calling (Copilot does).
-  #
-  # always: false means the capi module's PrefersAgentic heuristic gates
-  # per-failure: agentic only kicks in when ClusterArtifacts is nil or
-  # both Machines and PodLogDirs are empty (curator would have nothing
-  # useful to send). Most CAPZ failures still go through curator; only
-  # the worst-case "no logs collected" failures pay the agentic cost
-  # (~10x tokens / ~7x wall clock vs curator).
+  # Agentic mode lets the LLM browse GCS itself via function-calling tools.
+  # always: false gates per-failure on the capi module's PrefersAgentic
+  # heuristic (only failures where curator has little to work with).
   agentic:
     enabled: true
     always: false
