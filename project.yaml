@@ -7,7 +7,8 @@ short_name: "CAPZ"
 
 # Where in kubernetes/test-infra to find the prow job YAMLs.
 source:
-  test_infra_path: "config/jobs/kubernetes-sigs/cluster-api-provider-azure"
+  test_infra_paths:
+    - "config/jobs/kubernetes-sigs/cluster-api-provider-azure"
   file_prefix: "cluster-api-provider-azure-"
 
 # Only jobs that advertise this testgrid dashboard are included.
