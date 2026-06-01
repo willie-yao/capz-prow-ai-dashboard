@@ -17,13 +17,14 @@ permissions:
 
 concurrency:
   group: deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
     uses: willie-yao/prow-ai-dashboard/.github/workflows/reusable-deploy.yml@main
     with:
       project_dir: "."
+      builds: 4
       ai-model: ${{ vars.AI_MODEL }}
       ai-endpoint: ${{ vars.AI_ENDPOINT }}
     secrets:

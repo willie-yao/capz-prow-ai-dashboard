@@ -79,6 +79,11 @@ artifacts:
 ai:
   module: "capi"
 
+  # Phase L universal agentic path: bypass the capi/generic module
+  # dispatch + curator step; the LLM browses GCS + cluster artifacts
+  # itself via the tier-1 (filesystem) and tier-2 (k8s) tools.
+  use_universal_path: true
+
   # Per-failure evidence collected by the capi module before each AI call.
   # Omit a field to use the engine default; set to [] to disable a default.
   evidence:
@@ -113,3 +118,6 @@ ai:
   agentic:
     enabled: true
     always: false
+    tools:
+      - filesystem
+      - k8s
