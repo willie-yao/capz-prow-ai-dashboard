@@ -66,55 +66,13 @@ branding:
     owner: "kubernetes-sigs"
     name: "cluster-api-provider-azure"
 
-# Cluster name prefix the capi collector uses to group machine artifacts.
-capi:
-  cluster_name_prefix: "capz-e2e"
-
-# Per-build artifact collector.
-artifacts:
-  collector: "capi"
-
 # AI analysis settings. Endpoint and model come from repo variables
 # (vars.AI_MODEL / vars.AI_ENDPOINT) wired in .github/workflows/deploy.yml.
 ai:
-  module: "capi"
-
-  # Phase L universal agentic path: bypass the capi/generic module
-  # dispatch + curator step; the LLM browses GCS + cluster artifacts
-  # itself via the tier-1 (filesystem) and tier-2 (k8s) tools.
+  # Universal agentic path: the LLM browses GCS + cluster artifacts via the
+  # filesystem + k8s tools rather than going through a curator step.
   use_universal_path: true
 
-  # Per-failure evidence collected by the capi module before each AI call.
-  # Omit a field to use the engine default; set to [] to disable a default.
-  evidence:
-    machine_logs:
-      - kubelet.log
-      - containerd.log
-      - journal.log
-      - boot.log
-      - cloud-init-output.log
-
-    controller_logs:
-      - capi-system
-      - capi-kubeadm-bootstrap-system
-      - capi-kubeadm-control-plane-system
-      - capz-system
-
-    build_log_patterns:
-      - "FAIL|\\[FAIL\\]"
-      - "timed?\\s*out|timeout"
-      - "ImagePullBackOff|ErrImagePull"
-      - "CrashLoopBackOff"
-      - "NotFound|not found"
-      - "SkuNotAvailable"
-      - "GalleryImage|CommunityGaller"
-      - "quota|OperationNotAllowed"
-      - "provisioningState.*Failed"
-      - "version.*not.*available|not.*replicated"
-
-  # Agentic mode lets the LLM browse GCS itself via function-calling tools.
-  # always: false gates per-failure on the capi module's PrefersAgentic
-  # heuristic (only failures where curator has little to work with).
   agentic:
     enabled: true
     always: false
