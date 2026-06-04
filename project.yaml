@@ -5,13 +5,11 @@ id: capz
 name: "Cluster API Provider Azure"
 short_name: "CAPZ"
 
-# Where in kubernetes/test-infra to find the prow job YAMLs.
-source:
-  test_infra_paths:
-    - "config/jobs/kubernetes-sigs/cluster-api-provider-azure"
-  file_prefix: "cluster-api-provider-azure-"
-
 # Only jobs that advertise this testgrid dashboard are included.
+# Job discovery is fully automatic: the engine asks GitHub code search
+# for every YAML under kubernetes/test-infra/config/jobs/ that mentions
+# this dashboard, then keeps the jobs whose testgrid-dashboards
+# annotation contains it.
 testgrid:
   dashboard: "sig-cluster-lifecycle-cluster-api-provider-azure"
 
