@@ -79,6 +79,12 @@ Per-build artifacts under `artifacts/clusters/{cluster-name}/`:
 - Silent binary replacement failure: gallery binaries remain, causing version skew.
 
 ## Transient Errors (set is_transient=true, do NOT flag as bugs)
+Classify by the ROOT CAUSE you identify, not just the surface symptom. Many
+of these present generically ("context deadline exceeded", "timed out
+waiting", "failed to apply the cluster template") and only reveal the
+transient cause once you read the logs; if your investigation lands on one
+of the classes below, set is_transient=true even though you had to dig for
+it.
 - HTTP 429 / Azure API throttling.
 - Temporary quota exceeded.
 - "context deadline exceeded" during cleanup.
@@ -88,6 +94,11 @@ Per-build artifacts under `artifacts/clusters/{cluster-name}/`:
 - "node not found" in kubelet logs (before registration).
 - etcd "no leader" / "waiting for leader" during initial formation.
 - cloud-init url_helper.py retry warnings (metadata service).
+- Webhook TLS failures calling capz-webhook-service during cluster creation:
+  "failed to call webhook ... x509: certificate signed by unknown authority"
+  (cert-manager CA-injection race during bringup). Transient when it appears
+  early in cluster creation; treat as a real failure only if the webhook
+  stays unreachable for the whole run (persistent cert-manager misconfig).
 
 ## CAPZ-specific Triage Order
 1. build-log.txt — first fatal error or timeout.
