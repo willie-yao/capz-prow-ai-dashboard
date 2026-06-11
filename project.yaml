@@ -67,13 +67,8 @@ branding:
 # AI analysis settings. Endpoint and model come from repo variables
 # (vars.AI_MODEL / vars.AI_ENDPOINT) wired in .github/workflows/deploy.yml.
 ai:
-  # Universal agentic path: the LLM browses GCS + cluster artifacts via the
-  # filesystem + k8s tools rather than going through a curator step.
-  use_universal_path: true
-
-  agentic:
-    enabled: true
-    always: false
-    tools:
-      - filesystem
-      - k8s
+  # The agentic loop browses GCS + cluster artifacts via the filesystem +
+  # k8s tools. It is the only analysis path; no enable flag is needed.
+  tools:
+    - filesystem
+    - k8s
