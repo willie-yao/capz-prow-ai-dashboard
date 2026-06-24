@@ -1,20 +1,14 @@
 # Project config for the CAPZ Prow dashboard.
-# Consumed by the prow-ai-dashboard engine via .github/workflows/deploy.yml.
 
 id: capz
 name: "Cluster API Provider Azure"
 short_name: "CAPZ"
 
-# Only jobs that advertise this testgrid dashboard are included.
-# Job discovery is fully automatic: the engine asks GitHub code search
-# for every YAML under kubernetes/test-infra/config/jobs/ that mentions
-# this dashboard, then keeps the jobs whose testgrid-dashboards
-# annotation contains it.
+# Jobs advertising this testgrid dashboard are discovered automatically.
 testgrid:
   dashboard: "sig-cluster-lifecycle-cluster-api-provider-azure"
 
-# Job grouping. Rules are evaluated in order; first lowercase substring match
-# wins. Jobs with no match go in "other".
+# Job grouping. First substring match wins; unmatched jobs go in "other".
 categories:
   - match: "conformance"
     id: "conformance"
@@ -41,7 +35,7 @@ categories:
     id: "capz-e2e"
     label: "CAPZ E2E"
 
-# Display order for category sections on the landing page.
+# Section display order on the landing page.
 category_display_order:
   - capz-e2e
   - aks-e2e
@@ -55,7 +49,7 @@ category_display_order:
 gcs:
   bucket: "kubernetes-ci-logs"
 
-# UI branding. Frontend reads these from data/manifest.json at runtime.
+# UI branding.
 branding:
   title: "CAPZ Prow Dashboard"
   base_path: "/capz-prow-ai-dashboard"
@@ -64,11 +58,9 @@ branding:
     owner: "kubernetes-sigs"
     name: "cluster-api-provider-azure"
 
-# AI analysis settings. Endpoint and model come from repo variables
-# (vars.AI_MODEL / vars.AI_ENDPOINT) wired in .github/workflows/deploy.yml.
+# AI settings. Endpoint + model come from repo vars set in deploy.yml.
 ai:
-  # The agentic loop browses GCS + cluster artifacts via the filesystem +
-  # k8s tools. It is the only analysis path; no enable flag is needed.
+  # Tools exposed to the agentic loop.
   tools:
     - filesystem
     - k8s
