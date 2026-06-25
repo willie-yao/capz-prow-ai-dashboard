@@ -25,6 +25,10 @@ jobs:
     with:
       project_dir: "."
       builds: 10
+      # The smaller model + critique retry loop is slower than the prior
+      # Claude setup. A cold full re-analysis spans several runs; the AI cache
+      # persists partial progress so each run converges.
+      fetch-timeout: "150m"
       ai-model: ${{ vars.AI_MODEL }}
       ai-endpoint: ${{ vars.AI_ENDPOINT }}
     secrets:

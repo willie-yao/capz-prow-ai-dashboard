@@ -59,8 +59,33 @@ branding:
     owner: "kubernetes-sigs"
     name: "cluster-api-provider-azure"
 
-# AI settings. Endpoint + model come from repo vars set in deploy.yml.
+# AI settings. Endpoint + model come from repo vars set in deploy.yml
+# (GitHub Copilot, smaller model). Mirrors the Dynamo dashboard's
+# depth-boosting agentic config so a smaller model still digs deep.
 ai:
+  # Parallel analyses per fetch. Kept at 2 (not Dynamo's 4) because Copilot
+  # is a shared endpoint and critique retries multiply request volume.
+  concurrency: 2
+
+  # Per-failure wall-clock budget. Generous because the smaller model plus
+  # the critique retry loop needs room to finish a deep investigation.
+  timeout: 15m
+
+  # Max agentic iterations per failure.
+  max_iters: 30
+  # Investigation floors: refuse a final answer until the model has made
+  # this many tool calls and pulled this many bytes of evidence, so a weaker
+  # model can't punt with a shallow answer. Below-floor finals are published
+  # but not cached, so the next run retries.
+  min_tool_calls: 5
+  min_gcs_bytes: 500000
+  # On a critique retry, inject the artifacts the draft cited but never read.
+  evidence_injection: true
+  # Draft + critique retry loop. Also the opt-in for the skill recipes under
+  # skills/, which feed this gate.
+  critique:
+    enabled: true
+    max_retries: 2
   # Tools exposed to the agentic loop.
   tools:
     - filesystem
