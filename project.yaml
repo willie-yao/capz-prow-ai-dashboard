@@ -79,12 +79,8 @@ ai:
   # but not cached, so the next run retries.
   min_tool_calls: 5
   min_gcs_bytes: 500000
-  # On a critique retry, inject the artifacts the draft cited but never read.
-  evidence_injection: true
-  # Draft + critique retry loop. Also the opt-in for the skill recipes under
-  # skills/, which feed this gate.
+  # Draft + critique retry loop. Skill recipes under skills/ feed this gate.
   critique:
-    enabled: true
     max_retries: 2
   # Tools exposed to the agentic loop.
   tools:
