@@ -1,0 +1,58 @@
+id: azure-arm-throttling
+name: Azure ARM throttling / dropped resource operation (transient)
+description: |
+  An Azure control-plane (ARM) operation on a resource (NSG security
+  rules, VNets/subnets, disks, public IPs, etc.) was rate-limited
+  (HTTP 429 / TooManyRequests) or silently dropped, so a mutation the
+  test requested via the Azure SDK never took effect. The classic
+  manifestation is a test that requests a create/update/delete and
+  then enters an Eventually block that times out because the change
+  was never processed: the requested operation does not appear in the
+  Azure activity log after the test initiated it. These are almost
+  always transient Azure platform issues, not CAPZ code bugs. Recipe
+  pushes the model to confirm the drop from the activity-log timeline
+  before it blames the test or a controller, and to classify a
+  confirmed drop as transient. Example: AzureSecurityGroupsSpec deletes
+  a security rule at T, its Eventually waits 1200s, and no ARM delete
+  for that rule ever registers.
+
+priority: 150
+
+triggers:
+  - "(?i)\\b429\\b|too\\s+many\\s+requests|TooManyRequests"
+  - "(?i)throttl|rate\\s*limit|RetriableError|retry-after"
+  - "(?i)Timed\\s+out\\s+after\\s+\\d+.*Eventually"
+  - "(?i)(securityRules?|networkSecurityGroups?|subnets?|virtualNetworks?)\\b.*(delete|update|write|not\\s+found|still\\s+present)"
+
+required_evidence:
+  - id: azure-activity-log
+    description: The spec's workload-cluster ARM activity log (holds every accepted control-plane operation and its timestamp)
+    any_of:
+      - "artifacts/clusters/.*/azure-activity-logs/.*\\.log"
+  - id: build-log
+    description: Top-level build-log.txt showing the failing assertion and any explicit 429 / throttling message
+    any_of:
+      - "build-log\\.txt"
+      - ".*build-log\\.txt"
+
+procedure: |
+  1. Identify the resource and the operation the test expected (e.g.
+     delete of security rule "test-security-rule"), and the approximate
+     time the test initiated it, from build-log.txt.
+  2. Run verify_timeline on the spec's
+     artifacts/clusters/{cluster}/azure-activity-logs/{cluster}.log with
+     resource set to the resource name. This returns the ORDERED ARM
+     operations for that resource.
+  3. Decide from the timeline:
+     - If the requested operation NEVER appears after the test initiated
+       it (the last ARM write predates the request and nothing follows),
+       the request was throttled or silently dropped by ARM -> this is a
+       transient Azure platform issue. Set is_transient=true.
+     - If the operation DID register but returned an error or the wrong
+       result, that is a real bug -> name the component and cite the
+       operation/status from the timeline; do not mark transient.
+  4. Also grep build-log.txt for an explicit 429 / TooManyRequests /
+     throttling message near the failure; if present it confirms the
+     transient classification.
+  5. Do not punt to "investigate the Azure SDK" or "check the
+     controller" without first reading the activity-log timeline.
